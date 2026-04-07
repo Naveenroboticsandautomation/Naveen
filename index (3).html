@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NavIQ — Smart Navigation</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #060a12;
+  --bg2: #0d1420;
+  --surface: #111c2e;
+  --surface2: #162035;
+  --surface3: #1c2a44;
+  --border: rgba(99,179,237,0.1);
+  --border2: rgba(99,179,237,0.2);
+  --accent: #38bdf8;
+  --accent2: #34d399;
+  --accent3: #f472b6;
+  --amber: #fbbf24;
+  --danger: #f87171;
+  --text: #e2eaf6;
+  --text2: #8ba3c4;
+  --text3: #4a6080;
+  --font: 'Space Grotesk', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --r: 14px;
+  --r2: 20px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+html{scroll-behavior:smooth;}
+
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Ambient background */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(56,189,248,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(52,211,153,0.06) 0%, transparent 60%);
+  pointer-events:none;z-index:0;
+}
+
+/* Grid lines */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(56,189,248,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.025) 1px, transparent 1px);
+  background-size:60px 60px;
+  pointer-events:none;z-index:0;
+}
+
+/* ===================== LAYOUT ===================== */
+.layout{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:280px 1fr;
+  grid-template-rows:auto 1fr;
+  min-height:100vh;
+  max-width:1400px;
+  margin:0 auto;
+}
+
+/* ===================== TOPBAR ===================== */
+.topbar{
+  grid-column:1/-1;
+  display:flex;align-items:center;gap:16px;
+  padding:16px 24px;
+  background:rgba(11,17,28,0.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+
+.brand{
+  display:flex;align-items:center;gap:10px;
+  text-decoration:none;
+}
+
+.brand-icon{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:15px;color:#060a12;
+  flex-shrink:0;
+}
+
+.brand-name{
+  font-weight:700;font-size:18px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.brand-tagline{
+  font-size:11px;color:var(--text3);
+  font-family:var(--mono);
+  margin-top:-2px;
+}
+
+.topbar-search{
+  flex:1;max-width:600px;
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:0 12px;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+
+.topbar-search:focus-within{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(56,189,248,0.12);
+}
+
+.topbar-search input{
+  flex:1;background:none;border:none;outline:none;
+  font:500 14px var(--font);
+  color:var(--text);
+  padding:11px 0;
+}
+
+.topbar-search input::placeholder{color:var(--text3);}
+
+.icon-btn{
+  width:32px;height:32px;
+  border:none;background:none;
+  color:var(--text2);cursor:pointer;
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;
+  flex-shrink:0;
+}
+.icon-btn:hover{background:var(--surface3);color:var(--accent);}
+.icon-btn.active{color:var(--danger);}
+
+.search-go-btn{
+  padding:8px 16px;
+  background:var(--accent);
+  border:none;border-radius:8px;
+  color:#060a12;font:600 13px var(--font);
+  cursor:pointer;
+  transition:all 0.2s;
+  white-space:nowrap;
+}
+.search-go-btn:hover{background:#7dd3fc;}
+.search-go-btn:disabled{background:var(--surface3);color:var(--text3);cursor:not-allowed;}
+
+.topbar-right{
+  display:flex;align-items:center;gap:8px;
+  margin-left:auto;
+}
+
+.loc-pill{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 12px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:12px;color:var(--text2);
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.loc-pill:hover{border-color:var(--accent2);color:var(--accent2);}
+
+.pulse-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--accent2);
+  animation:pulse 2s infinite;
+}
+
+/* ===================== SIDEBAR ===================== */
+.sidebar{
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  padding:20px 16px;
+  display:flex;flex-direction:column;gap:6px;
+  overflow-y:auto;
+  height:calc(100vh - 65px);
+  position:sticky;
+  top:65px;
+}
+
+.sidebar-section{
+  margin-bottom:4px;
+}
+
+.sidebar-label{
+  font-size:10px;font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--text3);
+  padding:0 8px;
+  margin-bottom:6px;
+  margin-top:10px;
+}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:14px;color:var(--text2);
+  transition:all 0.2s;
+  border:1px solid transparent;
+}
+.nav-item:hover{background:var(--surface);color:var(--text);}
+.nav-item.active{
+  background:rgba(56,189,248,0.1);
+  border-color:rgba(56,189,248,0.2);
+  color:var(--accent);
+}
+
+.nav-item svg{flex-shrink:0;}
+
+.nav-badge{
+  margin-left:auto;
+  padding:2px 7px;
+  background:var(--accent);
+  color:#060a12;
+  border-radius:999px;
+  font-size:10px;font-weight:700;
+}
+
+.chip-grid{
+  display:flex;flex-direction:column;gap:4px;
+}
+
+.sidebar-chip{
+  padding:8px 12px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-size:13px;color:var(--text2);
+  cursor:pointer;
+  transition:all 0.2s;
+  display:flex;align-items:center;gap:8px;
+}
+.sidebar-chip:hover{
+  border-color:var(--accent);
+  color:var(--text);
+  background:var(--surface2);
+}
+
+/* ===================== MAIN ===================== */
+.main{
+  overflow-y:auto;
+  height:calc(100vh - 65px);
+  padding:24px;
+  display:flex;flex-direction:column;gap:20px;
+}
+
+/* ===================== PANELS ===================== */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* ===================== HOME PANEL ===================== */
+.hero{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:28px;
+  position:relative;
+  overflow:hidden;
+}
+
+.hero::before{
+  content:'';
+  position:absolute;
+  top:-40px;right:-40px;
+  width:200px;height:200px;
+  background:radial-gradient(circle, rgba(56,189,248,0.12), transparent 70%);
+  pointer-events:none;
+}
+
+.hero-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;
+  background:rgba(56,189,248,0.1);
+  border:1px solid rgba(56,189,248,0.2);
+  border-radius:999px;
+  font-size:11px;font-weight:600;
+  color:var(--accent);
+  margin-bottom:14px;
+  font-family:var(--mono);
+}
+
+.hero h2{
+  font-size:26px;font-weight:700;
+  line-height:1.2;
+  margin-bottom:10px;
+}
+
+.hero h2 span{
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.hero p{font-size:14px;color:var(--text2);line-height:1.6;max-width:480px;}
+
+.hero-stats{
+  display:flex;gap:20px;margin-top:20px;flex-wrap:wrap;
+}
+
+.stat-item{
+  display:flex;flex-direction:column;gap:2px;
+}
+
+.stat-val{
+  font-size:22px;font-weight:700;
+  font-family:var(--mono);
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.stat-label{font-size:11px;color:var(--text3);}
+
+/* Category grid */
+.section-title{
+  font-size:16px;font-weight:600;
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+
+.section-title::after{
+  content:'';flex:1;
+  height:1px;background:var(--border);
+}
+
+.cat-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
+  gap:10px;
+  margin-bottom:24px;
+}
+
+.cat-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px 12px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-align:center;
+}
+
+.cat-card:hover{
+  border-color:var(--border2);
+  background:var(--surface2);
+  transform:translateY(-2px);
+}
+
+.cat-icon{
+  width:40px;height:40px;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+}
+
+.cat-name{font-size:12px;font-weight:500;color:var(--text2);}
+
+/* Recent */
+.recent-list{display:flex;flex-direction:column;gap:8px;}
+
+.recent-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.recent-item:hover{border-color:var(--border2);background:var(--surface2);}
+
+.recent-icon{
+  width:34px;height:34px;
+  background:var(--surface2);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  flex-shrink:0;
+}
+
+.recent-name{font-size:14px;font-weight:500;}
+.recent-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+.recent-time{font-size:11px;color:var(--text3);margin-left:auto;font-family:var(--mono);}
+
+/* ===================== SEARCH RESULTS PANEL ===================== */
+.results-header{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:16px;
+}
+
+.results-query{
+  font-size:20px;font-weight:700;
+}
+
+.results-sub{
+  font-size:13px;color:var(--text2);
+  margin-top:2px;
+}
+
+.results-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:20px;
+}
+
+@media(max-width:700px){.results-grid{grid-template-columns:1fr;}}
+
+/* Place cards */
+.place-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:18px;
+  display:flex;flex-direction:column;gap:10px;
+  transition:all 0.2s;
+  animation:fadeUp 0.4s ease both;
+  cursor:pointer;
+}
+.place-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+
+.place-card-top{display:flex;align-items:flex-start;gap:12px;}
+
+.place-num-badge{
+  width:30px;height:30px;
+  border-radius:8px;
+  background:rgba(56,189,248,0.12);
+  border:1px solid rgba(56,189,248,0.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--accent);
+  flex-shrink:0;
+}
+
+.place-card-name{font-size:15px;font-weight:600;line-height:1.3;}
+.place-card-desc{font-size:13px;color:var(--text2);line-height:1.5;margin-top:3px;}
+
+.place-tags{display:flex;gap:6px;flex-wrap:wrap;}
+
+.tag{
+  padding:3px 9px;
+  border-radius:999px;
+  font-size:11px;font-weight:500;
+}
+.tag.rating{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.2);color:var(--amber);}
+.tag.price{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);color:var(--accent2);}
+.tag.open{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);color:var(--accent2);}
+.tag.closed{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:var(--danger);}
+.tag.dist{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.15);color:var(--accent);}
+
+.place-actions{display:flex;gap:8px;margin-top:4px;}
+
+.btn-sm{
+  padding:6px 12px;
+  border-radius:8px;
+  font-size:12px;font-weight:500;font-family:var(--font);
+  cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;gap:5px;
+  border:1px solid var(--border);
+  background:var(--surface2);
+  color:var(--text2);
+}
+.btn-sm:hover{background:var(--surface3);color:var(--text);}
+.btn-sm.primary{background:rgba(56,189,248,0.15);border-color:rgba(56,189,248,0.3);color:var(--accent);}
+.btn-sm.primary:hover{background:rgba(56,189,248,0.25);}
+
+/* Directions card */
+.dir-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:20px;
+  animation:fadeUp 0.4s 0.1s ease both;
+}
+
+.dir-step-list{display:flex;flex-direction:column;gap:0;}
+
+.dir-step{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:10px 0;
+  position:relative;
+}
+
+.dir-step::after{
+  content:'';
+  position:absolute;
+  left:14px;top:34px;
+  width:2px;
+  height:calc(100% - 20px);
+  background:var(--border);
+}
+
+.dir-step:last-child::after{display:none;}
+
+.step-node{
+  width:28px;height:28px;
+  border-radius:50%;
+  border:2px solid var(--accent);
+  background:rgba(56,189,248,0.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--accent);
+  flex-shrink:0;z-index:1;
+}
+
+.dir-step:first-child .step-node{background:var(--accent);color:#060a12;}
+.dir-step:last-child .step-node{background:var(--accent2);border-color:var(--accent2);color:#060a12;}
+
+.step-content{padding-top:4px;}
+.step-text{font-size:14px;color:var(--text);line-height:1.5;}
+.step-detail{font-size:12px;color:var(--text2);margin-top:2px;}
+
+/* Extra info */
+.extra-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:20px;
+  animation:fadeUp 0.4s 0.15s ease both;
+}
+
+.extra-chips{display:flex;flex-wrap:wrap;gap:8px;}
+
+.extra-chip{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 14px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-size:13px;color:var(--text);
+}
+
+.extra-chip .chip-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent2);
+  flex-shrink:0;
+}
+
+/* Map link */
+.map-link{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 20px;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:12px;
+  font-size:13px;font-weight:500;color:var(--accent);
+  cursor:pointer;text-decoration:none;
+  transition:all 0.2s;
+}
+.map-link:hover{background:rgba(56,189,248,0.1);border-color:var(--accent);}
+
+/* Emergency */
+.emergency-card{
+  display:none;
+  background:rgba(248,113,113,0.08);
+  border:1px solid rgba(248,113,113,0.3);
+  border-radius:var(--r2);
+  padding:16px 20px;
+  margin-bottom:16px;
+  animation:fadeUp 0.3s ease both;
+}
+.emergency-card.show{display:flex;align-items:center;gap:14px;}
+
+.em-icon{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--danger);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  animation:pulseRed 1.5s infinite;
+}
+
+.em-title{font-size:15px;font-weight:600;color:var(--danger);margin-bottom:4px;}
+.em-desc{font-size:13px;color:#fca5a5;line-height:1.5;}
+
+.em-numbers{
+  display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;
+}
+
+.em-num{
+  padding:5px 12px;
+  background:rgba(248,113,113,0.15);
+  border:1px solid rgba(248,113,113,0.3);
+  border-radius:999px;
+  font-size:12px;font-weight:600;color:var(--danger);
+  font-family:var(--mono);
+}
+
+/* Loading */
+.loading-overlay{
+  display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:48px 24px;
+  gap:16px;
+}
+.loading-overlay.show{display:flex;}
+
+.loader-ring{
+  width:48px;height:48px;
+  border:3px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin 0.9s linear infinite;
+}
+
+.loading-text{font-size:14px;color:var(--text2);}
+.loading-sub{font-size:12px;color:var(--text3);font-family:var(--mono);}
+
+/* ===================== FAVORITES PANEL ===================== */
+.favs-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:12px;
+}
+
+.fav-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:16px;
+  display:flex;flex-direction:column;gap:8px;
+  transition:all 0.2s;
+}
+.fav-card:hover{border-color:var(--border2);}
+
+.fav-card-top{display:flex;align-items:center;gap:10px;}
+
+.fav-emoji{
+  width:38px;height:38px;
+  background:var(--surface2);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  flex-shrink:0;
+}
+
+.fav-name{font-size:14px;font-weight:600;}
+.fav-loc{font-size:12px;color:var(--text2);margin-top:2px;}
+
+.fav-actions{display:flex;gap:6px;margin-top:4px;}
+
+.btn-del{
+  padding:5px 10px;
+  border-radius:7px;
+  font-size:11px;
+  border:1px solid rgba(248,113,113,0.2);
+  background:rgba(248,113,113,0.08);
+  color:var(--danger);
+  cursor:pointer;
+  transition:all 0.2s;
+  font-family:var(--font);
+}
+.btn-del:hover{background:rgba(248,113,113,0.18);}
+
+.empty-favs{
+  text-align:center;padding:48px 24px;
+  color:var(--text2);
+}
+.empty-favs .big{font-size:48px;margin-bottom:12px;opacity:0.4;}
+.empty-favs h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.empty-favs p{font-size:13px;line-height:1.6;}
+
+/* ===================== TRIP PLANNER PANEL ===================== */
+.trip-layout{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+@media(max-width:700px){.trip-layout{grid-template-columns:1fr;}}
+
+.trip-form{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:20px;
+}
+
+.form-group{margin-bottom:16px;}
+.form-label{
+  display:block;
+  font-size:12px;font-weight:500;
+  color:var(--text2);
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+
+.form-input,.form-select{
+  width:100%;
+  padding:10px 14px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  font:14px var(--font);
+  color:var(--text);
+  outline:none;
+  transition:border-color 0.2s;
+}
+.form-input:focus,.form-select:focus{border-color:var(--accent);}
+.form-input::placeholder{color:var(--text3);}
+.form-select option{background:var(--surface);}
+
+.btn-primary{
+  width:100%;
+  padding:12px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  border:none;border-radius:10px;
+  color:#060a12;
+  font:600 14px var(--font);
+  cursor:pointer;
+  transition:opacity 0.2s;
+}
+.btn-primary:hover{opacity:0.9;}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+
+.trip-result{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:20px;
+  min-height:200px;
+}
+
+.trip-stop{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.trip-stop:last-child{border-bottom:none;}
+
+.stop-num{
+  width:28px;height:28px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#060a12;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;
+  flex-shrink:0;
+}
+
+.stop-time{
+  font-size:11px;font-weight:600;
+  color:var(--accent);
+  font-family:var(--mono);
+  margin-top:1px;
+  white-space:nowrap;
+}
+
+.stop-name{font-size:14px;font-weight:600;margin-bottom:2px;}
+.stop-desc{font-size:12px;color:var(--text2);line-height:1.4;}
+
+/* ===================== SETTINGS PANEL ===================== */
+.settings-list{
+  display:flex;flex-direction:column;gap:10px;
+  max-width:600px;
+}
+
+.setting-row{
+  display:flex;align-items:center;gap:14px;
+  padding:16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+}
+
+.setting-info{flex:1;}
+.setting-name{font-size:14px;font-weight:500;}
+.setting-desc{font-size:12px;color:var(--text2);margin-top:2px;}
+
+.toggle{
+  width:40px;height:22px;
+  background:var(--surface3);
+  border-radius:999px;
+  cursor:pointer;
+  position:relative;
+  transition:background 0.2s;
+  border:none;
+  flex-shrink:0;
+}
+.toggle::after{
+  content:'';
+  position:absolute;
+  left:3px;top:3px;
+  width:16px;height:16px;
+  border-radius:50%;
+  background:var(--text3);
+  transition:all 0.2s;
+}
+.toggle.on{background:rgba(52,211,153,0.3);}
+.toggle.on::after{left:21px;background:var(--accent2);}
+
+/* ===================== UTILS ===================== */
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;
+}
+
+.section-h{font-size:15px;font-weight:600;}
+
+.view-all{
+  font-size:12px;color:var(--accent);cursor:pointer;
+  background:none;border:none;font-family:var(--font);
+}
+.view-all:hover{text-decoration:underline;}
+
+.divider{height:1px;background:var(--border);margin:4px 0;}
+
+/* Toasts */
+#toasts{
+  position:fixed;bottom:24px;right:24px;
+  display:flex;flex-direction:column;gap:8px;
+  z-index:9999;
+}
+
+.toast{
+  padding:12px 18px;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:12px;
+  font-size:13px;color:var(--text);
+  display:flex;align-items:center;gap:8px;
+  animation:slideIn 0.3s ease;
+  max-width:300px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.3);
+}
+.toast.success{border-color:rgba(52,211,153,0.3);}
+.toast.error{border-color:rgba(248,113,113,0.3);}
+
+/* Animations */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+@keyframes fadeDown{
+  from{opacity:0;transform:translateY(-10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@keyframes pulse{
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:0.5;transform:scale(0.8);}
+}
+
+@keyframes pulseRed{
+  0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,0.4);}
+  50%{box-shadow:0 0 0 8px rgba(248,113,113,0);}
+}
+
+@keyframes slideIn{
+  from{opacity:0;transform:translateX(20px);}
+  to{opacity:1;transform:translateX(0);}
+}
+
+.anim-1{animation:fadeUp 0.4s 0.0s ease both;}
+.anim-2{animation:fadeUp 0.4s 0.05s ease both;}
+.anim-3{animation:fadeUp 0.4s 0.10s ease both;}
+.anim-4{animation:fadeUp 0.4s 0.15s ease both;}
+.anim-5{animation:fadeUp 0.4s 0.20s ease both;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px;}
+
+/* Mobile responsive */
+@media(max-width:768px){
+  .layout{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .main{height:auto;padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ======== TOPBAR ======== -->
+  <header class="topbar">
+    <a class="brand" href="#" onclick="showPanel('home')">
+      <div class="brand-icon">NQ</div>
+      <div>
+        <div class="brand-name">NavIQ</div>
+        <div class="brand-tagline">v2.0 · Chennai</div>
+      </div>
+    </a>
+
+    <div class="topbar-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="mainInput" placeholder='Search places, directions, food, hotels…' onkeydown="if(event.key==='Enter')doSearch()"/>
+      <button class="icon-btn" id="voiceBtn" title="Voice search" onclick="startVoice()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+      <button class="search-go-btn" id="searchGoBtn" onclick="doSearch()">Search</button>
+    </div>
+
+    <div class="topbar-right">
+      <div class="loc-pill" onclick="showToast('📍 Location: Chennai, Tamil Nadu','success')">
+        <span class="pulse-dot"></span>
+        Chennai, TN
+      </div>
+    </div>
+  </header>
+
+  <!-- ======== SIDEBAR ======== -->
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <div class="nav-item active" id="nav-home" onclick="showPanel('home')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+      </div>
+      <div class="nav-item" id="nav-search" onclick="showPanel('search')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        Search Results
+      </div>
+      <div class="nav-item" id="nav-trip" onclick="showPanel('trip')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+        Trip Planner
+      </div>
+      <div class="nav-item" id="nav-favs" onclick="showPanel('favs')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Favorites
+        <span class="nav-badge" id="fav-count">0</span>
+      </div>
+      <div class="nav-item" id="nav-settings" onclick="showPanel('settings')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick Search</div>
+      <div class="chip-grid">
+        <div class="sidebar-chip" onclick="quickSearch('Best biryani near me')">🍛 Best biryani near me</div>
+        <div class="sidebar-chip" onclick="quickSearch('Cheap hotel near me')">🏨 Cheap hotel</div>
+        <div class="sidebar-chip" onclick="quickSearch('Nearest hospital emergency')">🏥 Nearest hospital</div>
+        <div class="sidebar-chip" onclick="quickSearch('Best coffee shop near me')">☕ Coffee shop</div>
+        <div class="sidebar-chip" onclick="quickSearch('Petrol bunk near me')">⛽ Petrol bunk</div>
+        <div class="sidebar-chip" onclick="quickSearch('ATM near me')">💳 ATM nearby</div>
+        <div class="sidebar-chip" onclick="quickSearch('Pharmacy near me')">💊 Pharmacy</div>
+        <div class="sidebar-chip" onclick="quickSearch('Romantic restaurant for dinner')">💑 Romantic dinner</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="padding:8px;margin-top:auto;">
+      <div style="font-size:11px;color:var(--text3);text-align:center;line-height:1.6;">
+        NavIQ Smart Navigation<br/>
+        <span style="font-family:var(--mono);">Chennai, Tamil Nadu</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ======== MAIN ======== -->
+  <main class="main">
+
+    <!-- ====== HOME PANEL ====== -->
+    <div class="panel active" id="panel-home">
+
+      <div class="hero anim-1">
+        <div class="hero-tag">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+          Live · Chennai, Tamil Nadu
+        </div>
+        <h2>Your <span>Smart Navigation</span><br/>Assistant</h2>
+        <p>Find places, plan trips, get directions — all in one place. Powered by AI for the smartest navigation experience.</p>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div class="stat-val">50K+</div>
+            <div class="stat-label">Places indexed</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val">AI</div>
+            <div class="stat-label">Powered search</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val">24/7</div>
+            <div class="stat-label">Emergency help</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="anim-2">
+        <div class="section-title">Explore by Category</div>
+        <div class="cat-grid">
+          <div class="cat-card" onclick="quickSearch('Restaurants near me')">
+            <div class="cat-icon">🍽️</div>
+            <div class="cat-name">Food</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('Hotels near me')">
+            <div class="cat-icon">🏨</div>
+            <div class="cat-name">Hotels</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('Hospital near me')">
+            <div class="cat-icon">🏥</div>
+            <div class="cat-name">Hospital</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('Shopping mall near me')">
+            <div class="cat-icon">🛍️</div>
+            <div class="cat-name">Shopping</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('Best cafe near me')">
+            <div class="cat-icon">☕</div>
+            <div class="cat-name">Cafes</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('Tourist places near Chennai')">
+            <div class="cat-icon">🏛️</div>
+            <div class="cat-name">Tourism</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('Petrol bunk near me')">
+            <div class="cat-icon">⛽</div>
+            <div class="cat-name">Fuel</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('ATM near me')">
+            <div class="cat-icon">💳</div>
+            <div class="cat-name">ATM</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('Gym near me')">
+            <div class="cat-icon">💪</div>
+            <div class="cat-name">Gym</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('Parks near me')">
+            <div class="cat-icon">🌳</div>
+            <div class="cat-name">Parks</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('School near me')">
+            <div class="cat-icon">🏫</div>
+            <div class="cat-name">Schools</div>
+          </div>
+          <div class="cat-card" onclick="quickSearch('Pharmacy near me')">
+            <div class="cat-icon">💊</div>
+            <div class="cat-name">Pharmacy</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="anim-3">
+        <div class="section-header">
+          <div class="section-h">Recent Searches</div>
+          <button class="view-all" onclick="clearRecent()">Clear all</button>
+        </div>
+        <div class="recent-list" id="recentList">
+          <div style="font-size:13px;color:var(--text3);padding:12px 0;">No recent searches yet. Start searching above!</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ====== SEARCH PANEL ====== -->
+    <div class="panel" id="panel-search">
+
+      <div class="emergency-card" id="emergencyCard">
+        <div class="em-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+        </div>
+        <div>
+          <div class="em-title">🚨 Emergency Detected</div>
+          <div class="em-desc">Nearest emergency services shown below.</div>
+          <div class="em-numbers">
+            <span class="em-num">📞 108 Ambulance</span>
+            <span class="em-num">🚔 100 Police</span>
+            <span class="em-num">🔥 101 Fire</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader-ring"></div>
+        <div class="loading-text">Finding best options near Chennai…</div>
+        <div class="loading-sub" id="loadingSubText">Searching AI database</div>
+      </div>
+
+      <div id="searchResults"></div>
+
+    </div>
+
+    <!-- ====== TRIP PLANNER PANEL ====== -->
+    <div class="panel" id="panel-trip">
+
+      <div class="section-title" style="font-size:18px;margin-bottom:20px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+        AI Trip Planner
+      </div>
+
+      <div class="trip-layout">
+        <div class="trip-form">
+          <div class="form-group">
+            <label class="form-label">Starting Point</label>
+            <input class="form-input" type="text" id="tripFrom" placeholder="e.g. Chennai Central" value="Chennai"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Destination / Theme</label>
+            <input class="form-input" type="text" id="tripTheme" placeholder="e.g. historical places, beach day, food tour"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration</label>
+            <select class="form-select" id="tripDuration">
+              <option value="half day">Half day (4-5 hours)</option>
+              <option value="full day" selected>Full day (8-10 hours)</option>
+              <option value="2 days">2 Days</option>
+              <option value="weekend">Weekend (2-3 days)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Travel Style</label>
+            <select class="form-select" id="tripStyle">
+              <option value="budget">Budget-friendly</option>
+              <option value="family" selected>Family-friendly</option>
+              <option value="adventure">Adventure</option>
+              <option value="luxury">Luxury</option>
+              <option value="romantic">Romantic</option>
+            </select>
+          </div>
+          <button class="btn-primary" id="planBtn" onclick="planTrip()">
+            ✨ Generate Trip Plan
+          </button>
+        </div>
+
+        <div class="trip-result" id="tripResult">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text2);">
+            <div style="font-size:40px;opacity:0.3;">🗺️</div>
+            <div style="font-size:14px;font-weight:500;color:var(--text);">Your trip plan will appear here</div>
+            <div style="font-size:13px;text-align:center;line-height:1.6;">Fill in the form and click Generate to get<br/>a custom AI-powered itinerary.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ====== FAVORITES PANEL ====== -->
+    <div class="panel" id="panel-favs">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          Saved Places
+        </div>
+      </div>
+
+      <div class="favs-grid" id="favsGrid">
+        <div class="empty-favs" style="grid-column:1/-1">
+          <div class="big">💝</div>
+          <h3>No saved places yet</h3>
+          <p>Search for places and tap the heart icon to save them here for quick access.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ====== SETTINGS PANEL ====== -->
+    <div class="panel" id="panel-settings">
+
+      <div style="font-size:18px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+
+      <div class="settings-list">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Voice Search</div>
+            <div class="setting-desc">Enable microphone for voice-based search</div>
+          </div>
+          <button class="toggle on" id="tog-voice" onclick="toggleSetting(this)"></button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Emergency Alerts</div>
+            <div class="setting-desc">Show emergency numbers for urgent queries</div>
+          </div>
+          <button class="toggle on" id="tog-em" onclick="toggleSetting(this)"></button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Search History</div>
+            <div class="setting-desc">Save recent searches on home screen</div>
+          </div>
+          <button class="toggle on" id="tog-hist" onclick="toggleSetting(this)"></button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Distance Units</div>
+            <div class="setting-desc">Kilometers (default for India)</div>
+          </div>
+          <button class="toggle on" id="tog-km" onclick="toggleSetting(this)"></button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Google Maps Integration</div>
+            <div class="setting-desc">Show "Open in Google Maps" button on results</div>
+          </div>
+          <button class="toggle on" id="tog-gmap" onclick="toggleSetting(this)"></button>
+        </div>
+        <div style="margin-top:8px;">
+          <div class="setting-row" style="cursor:pointer;" onclick="clearAll()">
+            <div class="setting-info">
+              <div class="setting-name" style="color:var(--danger)">Clear All Data</div>
+              <div class="setting-desc">Remove all searches, favorites, and preferences</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast container -->
+<div id="toasts"></div>
+
+<script>
+// ============ STATE ============
+const STATE = {
+  recent: JSON.parse(localStorage.getItem('nq_recent') || '[]'),
+  favorites: JSON.parse(localStorage.getItem('nq_favs') || '[]'),
+  settings: JSON.parse(localStorage.getItem('nq_settings') || '{"voice":true,"em":true,"hist":true,"km":true,"gmap":true}'),
+  lastQuery: '',
+  lastResults: null
+};
+
+const LOCATION = "Chennai, Tamil Nadu, India";
+
+// ============ INIT ============
+function init() {
+  renderRecent();
+  renderFavs();
+  updateFavBadge();
+  applySettings();
+}
+
+// ============ PANEL NAVIGATION ============
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  const navEl = document.getElementById('nav-' + id);
+  if (navEl) navEl.classList.add('active');
+}
+
+// ============ SEARCH ============
+async function doSearch() {
+  const input = document.getElementById('mainInput');
+  const query = input.value.trim();
+  if (!query) { showToast('Please enter a search query', 'error'); return; }
+
+  STATE.lastQuery = query;
+  showPanel('search');
+
+  const btn = document.getElementById('searchGoBtn');
+  btn.disabled = true;
+
+  document.getElementById('emergencyCard').classList.remove('show');
+  document.getElementById('loadingOverlay').classList.add('show');
+  document.getElementById('searchResults').innerHTML = '';
+
+  const loadingTexts = [
+    'Scanning nearby places…',
+    'Calculating best routes…',
+    'Checking ratings & reviews…',
+    'Preparing your results…'
+  ];
+  let li = 0;
+  const ltInterval = setInterval(() => {
+    li = (li + 1) % loadingTexts.length;
+    const el = document.getElementById('loadingSubText');
+    if (el) el.textContent = loadingTexts[li];
+  }, 900);
+
+  // Save to recent
+  if (STATE.settings.hist) {
+    addRecent(query);
+  }
+
+  const system = `You are a Smart Navigation Assistant for ${LOCATION}.
+Return ONLY valid JSON (no markdown, no backticks, no extra text):
+{
+  "places": [
+    {
+      "name": "Place Name",
+      "description": "1-2 sentence description with helpful detail",
+      "rating": "4.2",
+      "price": "₹200–400",
+      "distance": "2.3 km",
+      "status": "open",
+      "address": "Short address or area name"
+    }
+  ],
+  "directions": [
+    {"step": "Step text", "detail": "extra info or landmark"}
+  ],
+  "extra": ["Tip or fact 1", "Tip or fact 2", "Tip or fact 3", "Tip or fact 4"],
+  "emergency": false,
+  "summary": "One sentence describing what was found"
+}
+Rules:
+- Give 3 realistic places near Chennai
+- Directions: 4–5 steps from city center area
+- Extra: 4 practical tips/facts
+- emergency: true only for accident/medical/fire/police queries
+- Prices in INR
+- status: "open" or "closed"
+- Keep all text concise and practical`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1200,
+        system,
+        messages: [{ role: "user", content: query }]
+      })
+    });
+
+    const data = await res.json();
+    const raw = data.content?.map(b => b.text || "").join("") || "{}";
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+    STATE.lastResults = parsed;
+    renderSearchResults(parsed, query);
+    showToast('✅ Found ' + (parsed.places?.length || 0) + ' places', 'success');
+  } catch(e) {
+    document.getElementById('searchResults').innerHTML = `
+      <div style="padding:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);text-align:center;color:var(--text2);">
+        <div style="font-size:32px;margin-bottom:12px;opacity:0.5;">⚠️</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Search failed</div>
+        <div style="font-size:13px;">Check your connection and try again.</div>
+      </div>`;
+    showToast('Search failed — try again', 'error');
+  }
+
+  clearInterval(ltInterval);
+  document.getElementById('loadingOverlay').classList.remove('show');
+  btn.disabled = false;
+}
+
+function quickSearch(q) {
+  document.getElementById('mainInput').value = q;
+  doSearch();
+}
+
+// ============ RENDER SEARCH RESULTS ============
+function renderSearchResults(d, query) {
+  if (d.emergency) {
+    document.getElementById('emergencyCard').classList.add('show');
+  }
+
+  const mapQ = encodeURIComponent(query + ' ' + LOCATION);
+
+  // Place cards
+  const placesHTML = (d.places || []).map((p, i) => `
+    <div class="place-card" style="animation-delay:${i * 0.06}s">
+      <div class="place-card-top">
+        <div class="place-num-badge">${i + 1}</div>
+        <div style="flex:1">
+          <div class="place-card-name">${p.name}</div>
+          ${p.address ? `<div style="font-size:12px;color:var(--text3);margin-top:2px;">📍 ${p.address}</div>` : ''}
+        </div>
+      </div>
+      <div class="place-card-desc">${p.description}</div>
+      <div class="place-tags">
+        ${p.rating ? `<span class="tag rating">⭐ ${p.rating}</span>` : ''}
+        ${p.price  ? `<span class="tag price">${p.price}</span>` : ''}
+        ${p.distance ? `<span class="tag dist">📍 ${p.distance}</span>` : ''}
+        ${p.status === 'open' ? '<span class="tag open">● Open</span>' : p.status === 'closed' ? '<span class="tag closed">● Closed</span>' : ''}
+      </div>
+      <div class="place-actions">
+        <button class="btn-sm primary" onclick="openMaps('${encodeURIComponent(p.name + ' ' + LOCATION)}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Directions
+        </button>
+        <button class="btn-sm" onclick="saveFavorite(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          Save
+        </button>
+        <button class="btn-sm" onclick="sharePlace('${p.name}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+      </div>
+    </div>`).join('');
+
+  // Directions
+  const dirsHTML = (d.directions || []).map((s, i, arr) => `
+    <div class="dir-step">
+      <div class="step-node">${i + 1}</div>
+      <div class="step-content">
+        <div class="step-text">${s.step || s}</div>
+        ${s.detail ? `<div class="step-detail">${s.detail}</div>` : ''}
+      </div>
+    </div>`).join('');
+
+  // Extra
+  const extraHTML = (d.extra || []).map(e => `
+    <div class="extra-chip">
+      <div class="chip-dot"></div>
+      ${e}
+    </div>`).join('');
+
+  document.getElementById('searchResults').innerHTML = `
+    <div class="results-header anim-1">
+      <div>
+        <div class="results-query">"${query}"</div>
+        <div class="results-sub">${d.summary || (d.places?.length || 0) + ' results near Chennai'}</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:6px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Place Suggestions
+    </div>
+    <div class="results-grid">${placesHTML || '<p style="color:var(--text2);font-size:13px">No places found.</p>'}</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="dir-card">
+        <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          Step-by-Step Directions
+        </div>
+        <div class="dir-step-list">${dirsHTML || '<p style="font-size:13px;color:var(--text2)">No directions available.</p>'}</div>
+      </div>
+
+      <div class="extra-card">
+        <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Tips & Info
+        </div>
+        <div class="extra-chips">${extraHTML}</div>
+      </div>
+    </div>
+
+    <a class="map-link" href="https://www.google.com/maps/search/${mapQ}" target="_blank">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Open all results in Google Maps ↗
+    </a>`;
+}
+
+// ============ TRIP PLANNER ============
+async function planTrip() {
+  const from = document.getElementById('tripFrom').value.trim() || 'Chennai';
+  const theme = document.getElementById('tripTheme').value.trim();
+  const duration = document.getElementById('tripDuration').value;
+  const style = document.getElementById('tripStyle').value;
+
+  if (!theme) { showToast('Please enter a destination or theme', 'error'); return; }
+
+  const btn = document.getElementById('planBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Planning your trip…';
+
+  document.getElementById('tripResult').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:12px;">
+      <div class="loader-ring"></div>
+      <div style="font-size:13px;color:var(--text2);">Crafting your perfect itinerary…</div>
+    </div>`;
+
+  const prompt = `Plan a ${duration} ${style} trip from ${from} with theme: "${theme}".
+Return ONLY JSON:
+{
+  "title": "Trip title",
+  "stops": [
+    {
+      "time": "9:00 AM",
+      "name": "Place name",
+      "description": "What to do and why it's great",
+      "duration": "1.5 hours",
+      "tip": "insider tip"
+    }
+  ],
+  "totalDistance": "approx km",
+  "estimatedCost": "₹ range per person",
+  "bestTime": "Season/time recommendation"
+}
+Give 5-7 stops in logical order. Focus on real places in ${LOCATION} region.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1200,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.map(b => b.text || "").join("") || "{}";
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const trip = JSON.parse(clean);
+    renderTrip(trip);
+    showToast('✅ Trip plan ready!', 'success');
+  } catch(e) {
+    document.getElementById('tripResult').innerHTML = `<div style="padding:20px;color:var(--text2);font-size:13px;">Failed to generate trip plan. Try again.</div>`;
+    showToast('Failed to plan trip', 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✨ Generate Trip Plan';
+}
+
+function renderTrip(trip) {
+  const stopsHTML = (trip.stops || []).map((s, i) => `
+    <div class="trip-stop">
+      <div class="stop-num">${i + 1}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div class="stop-name">${s.name}</div>
+          <span style="font-size:11px;color:var(--accent);font-family:var(--mono);background:rgba(56,189,248,0.1);padding:2px 7px;border-radius:999px;">${s.time}</span>
+          ${s.duration ? `<span style="font-size:11px;color:var(--text3);">${s.duration}</span>` : ''}
+        </div>
+        <div class="stop-desc">${s.description}</div>
+        ${s.tip ? `<div style="font-size:11px;color:var(--accent2);margin-top:4px;">💡 ${s.tip}</div>` : ''}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('tripResult').innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${trip.title || 'Your Trip Plan'}</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        ${trip.estimatedCost ? `<span style="font-size:12px;color:var(--accent2);">💰 ${trip.estimatedCost}</span>` : ''}
+        ${trip.totalDistance ? `<span style="font-size:12px;color:var(--accent);">📍 ${trip.totalDistance}</span>` : ''}
+        ${trip.bestTime ? `<span style="font-size:12px;color:var(--amber);">🌤 ${trip.bestTime}</span>` : ''}
+      </div>
+    </div>
+    ${stopsHTML}`;
+}
+
+// ============ FAVORITES ============
+function saveFavorite(place) {
+  const exists = STATE.favorites.find(f => f.name === place.name);
+  if (exists) { showToast('Already in favorites', 'error'); return; }
+  STATE.favorites.push(place);
+  localStorage.setItem('nq_favs', JSON.stringify(STATE.favorites));
+  updateFavBadge();
+  renderFavs();
+  showToast('❤️ Saved to favorites!', 'success');
+}
+
+function removeFavorite(name) {
+  STATE.favorites = STATE.favorites.filter(f => f.name !== name);
+  localStorage.setItem('nq_favs', JSON.stringify(STATE.favorites));
+  updateFavBadge();
+  renderFavs();
+  showToast('Removed from favorites', 'success');
+}
+
+const EMOJIS = ['🍽️','🏨','🏥','☕','🛍️','🏛️','⛽','💳','🏋️','🌳','🏫','💊','🎭','🎬','🏖️'];
+
+function renderFavs() {
+  const grid = document.getElementById('favsGrid');
+  if (!STATE.favorites.length) {
+    grid.innerHTML = `<div class="empty-favs" style="grid-column:1/-1"><div class="big">💝</div><h3>No saved places yet</h3><p>Search for places and tap the Save button to keep them here.</p></div>`;
+    return;
+  }
+  grid.innerHTML = STATE.favorites.map((f, i) => `
+    <div class="fav-card">
+      <div class="fav-card-top">
+        <div class="fav-emoji">${EMOJIS[i % EMOJIS.length]}</div>
+        <div>
+          <div class="fav-name">${f.name}</div>
+          <div class="fav-loc">${f.address || 'Chennai, TN'}</div>
+        </div>
+      </div>
+      ${f.rating || f.price ? `<div class="place-tags">${f.rating ? `<span class="tag rating">⭐ ${f.rating}</span>` : ''}${f.price ? `<span class="tag price">${f.price}</span>` : ''}</div>` : ''}
+      <div class="fav-actions">
+        <button class="btn-sm primary" onclick="openMaps('${encodeURIComponent(f.name + ' Chennai')}')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Navigate
+        </button>
+        <button class="btn-del" onclick="removeFavorite('${f.name.replace(/'/g,"\\'")}')">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+function updateFavBadge() {
+  document.getElementById('fav-count').textContent = STATE.favorites.length;
+}
+
+// ============ RECENT ============
+function addRecent(query) {
+  STATE.recent = STATE.recent.filter(r => r.query !== query);
+  STATE.recent.unshift({ query, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) });
+  if (STATE.recent.length > 8) STATE.recent.pop();
+  localStorage.setItem('nq_recent', JSON.stringify(STATE.recent));
+  renderRecent();
+}
+
+function renderRecent() {
+  const list = document.getElementById('recentList');
+  if (!STATE.recent.length) {
+    list.innerHTML = `<div style="font-size:13px;color:var(--text3);padding:12px 0;">No recent searches yet.</div>`;
+    return;
+  }
+  list.innerHTML = STATE.recent.map(r => `
+    <div class="recent-item" onclick="quickSearch('${r.query.replace(/'/g,"\\'")}')">
+      <div class="recent-icon">🔍</div>
+      <div>
+        <div class="recent-name">${r.query}</div>
+        <div class="recent-meta">Chennai, Tamil Nadu</div>
+      </div>
+      <div class="recent-time">${r.time}</div>
+    </div>`).join('');
+}
+
+function clearRecent() {
+  STATE.recent = [];
+  localStorage.setItem('nq_recent', '[]');
+  renderRecent();
+  showToast('Recent searches cleared', 'success');
+}
+
+// ============ VOICE SEARCH ============
+function startVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    showToast('Voice search not supported in this browser', 'error');
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  rec.lang = 'en-IN';
+  rec.interimResults = false;
+
+  const btn = document.getElementById('voiceBtn');
+  btn.classList.add('active');
+  showToast('🎤 Listening…', 'success');
+
+  rec.onresult = (e) => {
+    const text = e.results[0][0].transcript;
+    document.getElementById('mainInput').value = text;
+    btn.classList.remove('active');
+    doSearch();
+  };
+
+  rec.onerror = () => {
+    btn.classList.remove('active');
+    showToast('Voice recognition failed', 'error');
+  };
+
+  rec.onend = () => btn.classList.remove('active');
+  rec.start();
+}
+
+// ============ SETTINGS ============
+function toggleSetting(btn) {
+  btn.classList.toggle('on');
+}
+
+function applySettings() {
+  Object.entries(STATE.settings).forEach(([k, v]) => {
+    const el = document.getElementById('tog-' + k);
+    if (el) el.className = 'toggle' + (v ? ' on' : '');
+  });
+}
+
+function clearAll() {
+  if (!confirm('Clear all data? This cannot be undone.')) return;
+  STATE.recent = [];
+  STATE.favorites = [];
+  localStorage.clear();
+  renderRecent();
+  renderFavs();
+  updateFavBadge();
+  showToast('All data cleared', 'success');
+}
+
+// ============ UTILS ============
+function openMaps(q) {
+  window.open('https://www.google.com/maps/search/' + q, '_blank');
+}
+
+function sharePlace(name) {
+  const url = 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' Chennai');
+  if (navigator.share) {
+    navigator.share({ title: name, text: 'Check out ' + name, url });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(url);
+    showToast('📋 Link copied to clipboard!', 'success');
+  } else {
+    showToast('Share not supported', 'error');
+  }
+}
+
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = msg;
+  container.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(20px)';
+    t.style.transition = 'all 0.3s';
+    setTimeout(() => t.remove(), 300);
+  }, 2800);
+}
+
+// ============ START ============
+init();
+</script>
+
+</body>
+</html>
